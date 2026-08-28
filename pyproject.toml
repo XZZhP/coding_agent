@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coding-agent"
+version = "0.1.0"
+description = "自研编程智能体：基于 DeepSeek 大模型的本地 coding agent（推免考核项目）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    # OpenAI 官方 Python SDK：DeepSeek 提供 OpenAI 兼容接口，
+    # 属于规则允许的"模型厂商 API 客户端库"，仅用于收发消息，不含任何 agent 逻辑
+    "openai>=1.40",
+    # 仅用于 Windows 终端 ANSI 颜色支持
+    "colorama>=0.4.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+coding-agent = "coding_agent.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["coding_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,24 @@
+# 环境与密钥 —— API key 只允许出现在环境变量或未入库的 .env 中
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# 测试与工具产物
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 编辑器
+.vscode/
+.idea/
+
+# 会话存档（可能包含任务上下文，不入库）
+sessions/
