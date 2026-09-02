@@ -20,7 +20,7 @@ from .llm import LLMAuthError
 
 HELP_TEXT = """内置命令：
   /help        显示本帮助
-  /save [路径] 保存当前会话（默认 sessions/session-<时间>.json，可用 --session 恢复）
+  /save [路径] 保存当前会话（默认写回 --session 载入的源文件，否则新建带时间戳存档）
   /reset       清空对话历史，重新开始
   /model 名    切换模型（如 /model deepseek-v4-pro）
   /yes         之后不再确认工具调用（等同启动参数 -y）
@@ -50,6 +50,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version",
                    version=f"coding-agent {__version__}")
     return p
+
+
+def choose_save_path(arg: str | None, current: Path | None) -> Path:
+    """决定 /save 的落盘位置。
+
+    优先级：显式路径 > 写回 --session 载入的源文件 > 新建带时间戳的存档。
+    抽出为纯函数便于单元测试。
+    """
+    if arg:
+        return Path(arg)
+    if current is not None:
+        return current
+    return Path("sessions") / f"session-{datetime.now():%Y%m%d-%H%M%S}.json"
 
 
 def _load_session(path: Path) -> dict:
@@ -102,8 +115,10 @@ def main(argv: list[str] | None = None) -> int:
                          f" | 权限：{'全自动（-y）' if config.auto_yes else '分级确认'}")
 
     agent = Agent(config)
+    current_session: Path | None = None
     if args.session:
-        data = _load_session(Path(args.session))
+        current_session = Path(args.session)
+        data = _load_session(current_session)
         agent.conversation = Conversation.from_session(
             data, agent.conversation.messages[0]["content"],
             config.context_window, config.keep_last_messages,
@@ -152,12 +167,14 @@ def main(argv: list[str] | None = None) -> int:
                 agent.permission.auto_yes = True
                 console.print_system("已开启全自动模式，不再确认工具调用")
             elif cmd == "save":
-                path = _save_session(
-                    agent,
-                    Path(arg) if arg else Path("sessions")
-                    / f"session-{datetime.now():%Y%m%d-%H%M%S}.json",
+                path = choose_save_path(arg, current_session)
+                _save_session(agent, path)
+                overwrote = current_session is not None and \
+                    path.resolve() == current_session.resolve()
+                current_session = path
+                console.print_system(
+                    f"会话已保存：{path}" + ("（已更新原存档）" if overwrote else "")
                 )
-                console.print_system(f"会话已保存：{path}")
             else:
                 console.print_error(f"未知命令：/{cmd}（输入 /help 查看帮助）")
             continue
