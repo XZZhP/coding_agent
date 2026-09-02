@@ -65,5 +65,5 @@ coding_agent/
 ├── context.py    # 对话历史、token 用量跟踪、摘要式压缩
 ├── config.py     # 环境变量 / .env 配置加载
 └── console.py    # 终端彩色输出（Windows 兼容）
-tests/            # 62 个单元测试（FakeLLM 脚本化，无真实网络请求）
+tests/            # 67 个单元测试（FakeLLM 脚本化，无真实网络请求）
 ```
