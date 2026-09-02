@@ -22,3 +22,6 @@ htmlcov/
 
 # 会话存档（可能包含任务上下文，不入库）
 sessions/
+
+# 演示/测试工作区（不入库）
+demo_workspace/
