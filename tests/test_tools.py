@@ -90,6 +90,34 @@ def test_edit_file_not_unique(tmp_path):
                           "new_string": "b = "}, ctx)
 
 
+def test_edit_file_lf_old_string_on_crlf_file(tmp_path):
+    """模型输出 LF，而 Windows 文件常为 CRLF：工具应自动适配行尾。
+
+    回归用例：演练中真实出现过多行替换因 CRLF/LF 失配而失败的问题。
+    """
+    ctx = make_ctx(tmp_path)
+    p = tmp_path / "win.py"
+    p.write_bytes(b"def f():\r\n    return 1\r\n\r\ndef g():\r\n    return 2\r\n")
+    out = run("edit_file",
+              {"path": "win.py",
+               "old_string": "def g():\n    return 2",   # 模型风格的 LF
+               "new_string": "def g():\n    return 42"},
+              ctx)
+    assert "已替换 1 处" in out
+    raw = p.read_bytes()
+    assert b"return 42" in raw
+    assert b"def f():\r\n    return 1" in raw          # 其余内容原样保留
+    assert b"def g():\r\n    return 42" in raw         # 替换处保持 CRLF 风格
+
+
+def test_edit_file_crlf_adaptation_still_requires_unique(tmp_path):
+    ctx = make_ctx(tmp_path)
+    (tmp_path / "d.py").write_bytes(b"x = 1\r\nx = 1\r\n")
+    with pytest.raises(ToolError, match="不够唯一"):
+        run("edit_file", {"path": "d.py", "old_string": "x = 1",
+                          "new_string": "x = 2"}, ctx)
+
+
 # ---------------------------------------------------------------- 安全边界
 
 def test_write_outside_workdir_rejected(tmp_path):

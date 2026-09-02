@@ -170,6 +170,12 @@ def _tool_edit_file(args: dict, ctx: ExecutionContext) -> str:
     old, new = args["old_string"], args["new_string"]
     text = _read_text(p)
     count = text.count(old)
+    if count == 0 and "\r\n" in text and "\n" in old and "\r\n" not in old:
+        # 行尾适配：模型几乎总是生成 LF 文本，而 Windows 文件常为 CRLF。
+        # 工具层自动把 old/new 归一为文件的换行风格后重试，让模型无需感知平台差异。
+        old = old.replace("\n", "\r\n")
+        new = new.replace("\n", "\r\n")
+        count = text.count(old)
     if count == 0:
         raise ToolError(
             "未找到要替换的内容（0 处匹配）。请用 read_file 重新查看文件当前内容，"
